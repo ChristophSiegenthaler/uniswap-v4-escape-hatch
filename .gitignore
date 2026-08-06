@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+
+# Never commit secrets. Leaked keys are drained by bots within seconds, even
+# from private repos that are later deleted.
+.env
+.env.*
+*.key
+keystore/

@@ -1,0 +1,164 @@
+/* Semantic colour tokens only.
+   frontend-ux Rule 6: no hardcoded dark backgrounds. Every surface reads from a
+   token, and the palette flips with the OS preference, so the page is legible in
+   both themes without a toggle to get out of sync. */
+
+:root {
+	--bg: #f7f7f8;
+	--surface: #ffffff;
+	--surface-raised: #f0f0f2;
+	--border: #d8d8de;
+	--text: #16161a;
+	--text-muted: #6a6a76;
+	--accent: #b8336a;
+	--accent-text: #ffffff;
+	--danger: #b4232c;
+	--danger-bg: #fdf0f0;
+	--ok: #1a7f52;
+	--warn-bg: #fdf6e3;
+	--warn-border: #e0c98a;
+
+	--radius: 0.5rem;
+	--mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #131316;
+		--surface: #1c1c21;
+		--surface-raised: #26262d;
+		--border: #33333d;
+		--text: #ececf0;
+		--text-muted: #9a9aa8;
+		--accent: #e8639b;
+		--accent-text: #16161a;
+		--danger: #ff8b8b;
+		--danger-bg: #2a1a1c;
+		--ok: #5fd39b;
+		--warn-bg: #2a2413;
+		--warn-border: #5c4f22;
+	}
+}
+
+* { box-sizing: border-box; }
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+
+.app { max-width: 30rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+header { margin-bottom: 1.5rem; }
+h1 { font-size: 1.25rem; margin: 0 0 0.25rem; letter-spacing: -0.01em; }
+.tagline { color: var(--text-muted); font-size: 0.8125rem; margin: 0; }
+
+.card {
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	padding: 1rem;
+	margin-bottom: 1rem;
+}
+
+.card h2 {
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--text-muted);
+	margin: 0 0 0.75rem;
+	font-weight: 600;
+}
+
+button {
+	font: inherit;
+	border-radius: var(--radius);
+	border: 1px solid var(--border);
+	background: var(--surface-raised);
+	color: var(--text);
+	padding: 0.6rem 0.9rem;
+	cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--text-muted); }
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.btn-primary {
+	width: 100%;
+	background: var(--accent);
+	color: var(--accent-text);
+	border-color: transparent;
+	font-weight: 600;
+	padding: 0.75rem 1rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+}
+
+/* Inline spinner beside the label, so the button keeps its text while pending
+   instead of collapsing to a bare spinner. */
+.spinner {
+	width: 0.85em;
+	height: 0.85em;
+	border: 2px solid currentColor;
+	border-right-color: transparent;
+	border-radius: 50%;
+	animation: spin 0.6s linear infinite;
+	flex: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2s; } }
+
+.wallet-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.wallet-option { display: flex; align-items: center; gap: 0.6rem; width: 100%; text-align: left; }
+.wallet-option img { width: 1.5rem; height: 1.5rem; border-radius: 0.25rem; flex: none; }
+.wallet-badge {
+	width: 1.5rem; height: 1.5rem; border-radius: 0.25rem; flex: none;
+	background: var(--surface-raised); border: 1px solid var(--border);
+	display: grid; place-items: center; font-size: 0.7rem; color: var(--text-muted);
+}
+
+.row { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; padding: 0.3rem 0; }
+.row + .row { border-top: 1px solid var(--border); }
+.label { color: var(--text-muted); font-size: 0.8125rem; }
+.value { font-family: var(--mono); font-size: 0.8125rem; }
+
+.addr { display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--mono); font-size: 0.8125rem; }
+.addr a { color: inherit; }
+.icon-btn { padding: 0.15rem 0.35rem; font-size: 0.75rem; line-height: 1.2; }
+
+.alert { border-radius: var(--radius); padding: 0.7rem 0.85rem; font-size: 0.875rem; margin-bottom: 1rem; }
+.alert-error { background: var(--danger-bg); border: 1px solid var(--danger); color: var(--danger); }
+.alert-warn { background: var(--warn-bg); border: 1px solid var(--warn-border); }
+.alert details { margin-top: 0.4rem; }
+.alert summary { cursor: pointer; font-size: 0.8125rem; }
+.alert pre { overflow-x: auto; font-size: 0.75rem; margin: 0.4rem 0 0; }
+
+.pill { font-size: 0.6875rem; padding: 0.1rem 0.4rem; border-radius: 999px; border: 1px solid var(--border); color: var(--text-muted); }
+.pill-ok { color: var(--ok); border-color: currentColor; }
+.pill-off { color: var(--text-muted); }
+
+.muted { color: var(--text-muted); font-size: 0.8125rem; }
+.stack { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.input {
+	display: block;
+	width: 100%;
+	margin-top: 0.25rem;
+	padding: 0.55rem 0.65rem;
+	font: inherit;
+	font-family: var(--mono);
+	font-size: 0.8125rem;
+	color: var(--text);
+	background: var(--surface-raised);
+	border: 1px solid var(--border);
+	/* Deliberately not pill-shaped: fully rounded fields clip long hex strings. */
+	border-radius: var(--radius);
+}
+.input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.chip { padding: 0.25rem 0.5rem; font-size: 0.75rem; border-radius: 999px; }

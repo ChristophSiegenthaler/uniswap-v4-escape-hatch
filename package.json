@@ -1,0 +1,31 @@
+{
+  "name": "uniswap-v4-escape-hatch",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "A serverless Uniswap v4 interface. Talks only to the browser wallet's RPC.",
+  "scripts": {
+    "build": "node build.mjs",
+    "dev": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json",
+    "verify:addresses": "node scripts/verify-addresses.ts",
+    "verify:no-network": "node scripts/check-no-network.ts",
+    "check": "npm run typecheck && npm run build && npm run verify:no-network && npm test",
+    "test": "node scripts/smoke-test.ts",
+    "verify:discovery": "node scripts/verify-discovery.ts",
+    "verify:onchain": "npm run verify:addresses && npm run verify:discovery && npm run verify:positions",
+    "verify:positions": "node scripts/verify-positions.ts"
+  },
+  "dependencies": {
+    "@preact/signals": "^2.0.1",
+    "preact": "^10.26.4",
+    "viem": "^2.23.5"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^28.0.3",
+    "@types/node": "^26.1.2",
+    "esbuild": "^0.25.0",
+    "jsdom": "^30.0.1",
+    "typescript": "^5.8.2"
+  }
+}

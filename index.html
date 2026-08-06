@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uniswap v4 Escape Hatch</title>
+<meta name="description" content="A Uniswap v4 interface that talks only to your wallet's RPC. No backend, no indexer, no third-party servers.">
+<meta name="color-scheme" content="light dark">
+<!-- Inline SVG favicon: an external icon file would be one more request, and on
+     IPFS one more thing to pin. -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='14'>&#129412;</text></svg>">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div id="app"></div>
+<noscript>This interface needs JavaScript: it computes pool state and encodes transactions entirely in your browser.</noscript>
+<script type="module" src="app.js"></script>
+</body>
+</html>
