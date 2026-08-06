@@ -100,6 +100,15 @@ function App() {
 				</p>
 			</header>
 
+			{capabilities.value.localNode && (
+				<div class='alert alert-warn' role='status'>
+					<strong>Local development node.</strong> You are connected to anvil or
+					hardhat, not to {activeChainConfig.value?.name ?? 'a real network'} — even
+					though it reports the same chain id. Balances, ownership and prices here
+					are a local copy. Nothing you sign leaves this machine.
+				</div>
+			)}
+
 			{connectionError.value !== undefined && (
 				<div class='alert alert-error'>{connectionError.value}</div>
 			)}

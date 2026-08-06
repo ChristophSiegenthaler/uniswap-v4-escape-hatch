@@ -61,7 +61,7 @@ function boot(): Harness {
 }
 
 /** A minimal EIP-1193 wallet whose RPC supports multicall but refuses getLogs. */
-function mockProvider(chainIdHex: string) {
+function mockProvider(chainIdHex: string, localNode = false) {
 	const listeners = new Map<string, ((...args: never[]) => void)[]>()
 	const seen: string[] = []
 	return {
@@ -79,6 +79,11 @@ function mockProvider(chainIdHex: string) {
 					case 'eth_blockNumber': return '0x188209f'
 					case 'eth_getCode': return '0x6080604052'
 					case 'eth_getLogs': throw Object.assign(new Error('method not supported'), { code: -32601 })
+					case 'anvil_nodeInfo':
+						if (localNode) return { currentBlockNumber: '0x1882283' }
+						throw Object.assign(new Error('method does not exist'), { code: -32601 })
+					case 'hardhat_metadata':
+						throw Object.assign(new Error('method does not exist'), { code: -32601 })
 					// 128 zero bytes: decodes as an uninitialised pool (sqrtPriceX96 == 0),
 					// which is how an absent pool legitimately reads on chain.
 					case 'eth_call': return `0x${'00'.repeat(128)}`
@@ -279,6 +284,39 @@ console.log('\nScenario 5: emergency exit UI\n')
 
 	if (h.consoleErrors.length === 0) pass('no console errors')
 	else fail(`console errors: ${h.consoleErrors.join(' | ')}`)
+}
+
+// --- scenario 6: a forked node must not masquerade as the real chain ---------
+
+console.log('\nScenario 6: local fork claiming to be mainnet\n')
+{
+	const h = boot()
+	await tick()
+	announce(h, mockProvider('0x1', true))
+	await tick()
+	h.buttons().find(b => b.textContent?.includes('Mock Wallet'))?.click()
+	await tick(500)
+
+	const text = h.text()
+	// A mainnet fork reports chain id 1, so nothing else distinguishes it.
+	if (text.includes('Local development node')) pass('local node detected and announced')
+	else fail('a fork claiming chain id 1 was presented as real Ethereum')
+
+	if (text.includes('not to Ethereum')) pass('names the chain it is impersonating')
+	else fail('banner does not say which network it is standing in for')
+}
+
+// A real endpoint must NOT be flagged as local.
+{
+	const h = boot()
+	await tick()
+	announce(h, mockProvider('0x1', false))
+	await tick()
+	h.buttons().find(b => b.textContent?.includes('Mock Wallet'))?.click()
+	await tick(500)
+
+	if (!h.text().includes('Local development node')) pass('a real endpoint is not mislabelled as local')
+	else fail('real endpoint wrongly flagged as a local node')
 }
 
 console.log(failures === 0 ? '\nSmoke test passed.' : `\n${failures} check(s) FAILED.`)

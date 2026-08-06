@@ -21,11 +21,23 @@ export interface Capabilities {
 	 * user's LP positions by scanning Transfer events. Never required.
 	 */
 	logs: boolean
+	/**
+	 * The endpoint is a local development node (anvil/hardhat), not a real chain.
+	 *
+	 * Worth detecting loudly. A forked node normally claims the chain id it forked
+	 * from, so a mainnet fork is indistinguishable from mainnet by chain id alone --
+	 * the app cannot tell, and neither can the user. That is dangerous in both
+	 * directions: mistaking mainnet for a fork risks signing something real, and
+	 * mistaking a fork for mainnet makes correct behaviour look broken.
+	 */
+	localNode: boolean
 	/** Probing finished. */
 	probed: boolean
 }
 
-export const capabilities = signal<Capabilities>({ multicall: false, logs: false, probed: false })
+export const capabilities = signal<Capabilities>({
+	multicall: false, logs: false, localNode: false, probed: false,
+})
 
 async function probeMulticall(provider: EIP1193Provider): Promise<boolean> {
 	try {
@@ -60,11 +72,29 @@ async function probeLogs(provider: EIP1193Provider): Promise<boolean> {
 	}
 }
 
+/**
+ * Detects anvil/hardhat. Both expose namespaced admin methods that no public
+ * endpoint implements, so a successful call is a reliable tell.
+ */
+async function probeLocalNode(provider: EIP1193Provider): Promise<boolean> {
+	for (const method of ['anvil_nodeInfo', 'hardhat_metadata']) {
+		try {
+			const result = await provider.request({ method })
+			if (result !== null && result !== undefined) return true
+		} catch {
+			// Expected against a real node: the method does not exist.
+		}
+	}
+	return false
+}
+
 export async function probeCapabilities(provider: EIP1193Provider): Promise<void> {
-	const [multicall, logs] = await Promise.all([probeMulticall(provider), probeLogs(provider)])
-	capabilities.value = { multicall, logs, probed: true }
+	const [multicall, logs, localNode] = await Promise.all([
+		probeMulticall(provider), probeLogs(provider), probeLocalNode(provider),
+	])
+	capabilities.value = { multicall, logs, localNode, probed: true }
 }
 
 export function resetCapabilities(): void {
-	capabilities.value = { multicall: false, logs: false, probed: false }
+	capabilities.value = { multicall: false, logs: false, localNode: false, probed: false }
 }
