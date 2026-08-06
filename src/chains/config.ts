@@ -38,6 +38,14 @@ export interface ChainConfig {
 	/** Intermediate hops for local route search. Ordered by expected liquidity. */
 	readonly baseTokens: readonly TokenInfo[]
 	/**
+	 * Runtime bytecode size of this chain's PoolManager, in bytes.
+	 *
+	 * Used to identify which chain a fork is standing in for. Presence of *any*
+	 * code at the address is far too weak -- an unrelated contract could sit there
+	 * on a foreign chain -- so we require the size to match too.
+	 */
+	readonly poolManagerCodeSize: number
+	/**
 	 * Block explorer, used only for user-initiated <a href> links. The page never
 	 * fetches from it, so it costs nothing on load; clicking is the user's choice.
 	 * scripts/check-no-network.ts allowlists exactly these hosts.
@@ -102,6 +110,7 @@ export const CHAINS: Readonly<Record<number, ChainConfig>> = {
 			{ address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', symbol: 'USDT', decimals: 6 },
 			{ address: '0x6B175474E89094C44Da98b954EedeAC495271d0F', symbol: 'DAI', decimals: 18 },
 		],
+		poolManagerCodeSize: 24009,
 		explorer: 'https://etherscan.io',
 	},
 	10: {
@@ -122,6 +131,7 @@ export const CHAINS: Readonly<Record<number, ChainConfig>> = {
 			{ address: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85', symbol: 'USDC', decimals: 6 },
 			{ address: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58', symbol: 'USDT', decimals: 6 },
 		],
+		poolManagerCodeSize: 24009,
 		explorer: 'https://optimistic.etherscan.io',
 	},
 	130: {
@@ -141,6 +151,7 @@ export const CHAINS: Readonly<Record<number, ChainConfig>> = {
 			{ address: '0x4200000000000000000000000000000000000006', symbol: 'WETH', decimals: 18 },
 			{ address: '0x078D782b760474a361dDA0AF3839290b0EF57AD6', symbol: 'USDC', decimals: 6 },
 		],
+		poolManagerCodeSize: 24050,
 		explorer: 'https://uniscan.xyz',
 	},
 	8453: {
@@ -160,6 +171,7 @@ export const CHAINS: Readonly<Record<number, ChainConfig>> = {
 			{ address: '0x4200000000000000000000000000000000000006', symbol: 'WETH', decimals: 18 },
 			{ address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', symbol: 'USDC', decimals: 6 },
 		],
+		poolManagerCodeSize: 24009,
 		explorer: 'https://basescan.org',
 	},
 	42161: {
@@ -181,6 +193,7 @@ export const CHAINS: Readonly<Record<number, ChainConfig>> = {
 			// Tether's bridged token on Arbitrum reports symbol "USD₮0" onchain, not "USDT".
 			{ address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9', symbol: 'USD₮0', decimals: 6 },
 		],
+		poolManagerCodeSize: 24009,
 		explorer: 'https://arbiscan.io',
 	},
 }

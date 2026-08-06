@@ -51,7 +51,6 @@ function decodeString(hex: string): string {
 // expected size turns "has code" into a much stronger check: a wrong-but-populated
 // address almost certainly has a different size.
 const EXPECTED_SIZES: Record<string, number> = {
-	poolManager: 24009,
 	positionManager: 23877,
 	stateView: 3531,
 	quoter: 5820,
@@ -60,12 +59,12 @@ const EXPECTED_SIZES: Record<string, number> = {
 	multicall3: 3808,
 }
 
-// Unichain is the exception: its PoolManager at the 0x1f984000...04 vanity address
-// is a distinct build (24050b). Uniswap operate that chain, so a divergent
-// deployment is expected rather than suspicious -- but it gets its own pinned size
-// so a future change still trips the check.
-const SIZE_OVERRIDES: Record<number, Record<string, number>> = {
-	130: { poolManager: 24050 },
+// PoolManager sizes live in the chain config, because the app itself relies on
+// them to identify which chain a fork is standing in for. Checking them here
+// keeps that load-bearing value honest.
+function expectedSize(chain: ChainConfig, contract: string): number | undefined {
+	if (contract === 'poolManager') return chain.poolManagerCodeSize
+	return EXPECTED_SIZES[contract]
 }
 
 async function verifyChain(chain: ChainConfig): Promise<void> {
@@ -85,7 +84,7 @@ async function verifyChain(chain: ChainConfig): Promise<void> {
 		try {
 			const size = (await getCode(rpcUrl, address as Address)).length / 2 - 1
 			if (size <= 0) { fail(`${name} ${address} has NO CODE`); continue }
-			const expected = SIZE_OVERRIDES[chain.chainId]?.[name] ?? EXPECTED_SIZES[name]
+			const expected = expectedSize(chain, name)
 			if (expected !== undefined && size !== expected) {
 				fail(`${name} ${address} is ${size}b, expected ${expected}b`)
 				continue

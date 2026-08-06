@@ -79,12 +79,14 @@ function mockProvider(chainIdHex: string, localNode = false, forkOf?: string) {
 					case 'eth_chainId': return chainIdHex
 					case 'eth_blockNumber': return '0x188209f'
 					case 'eth_getCode': {
-						// When simulating a fork, only the forked chain's PoolManager has code.
 						const target = String((params as unknown[] | undefined)?.[0] ?? '').toLowerCase()
-						if (forkOf !== undefined && target !== MULTICALL3.toLowerCase()) {
-							return target === forkOf.toLowerCase() ? '0x6080604052' : '0x'
+						if (target === MULTICALL3.toLowerCase()) return '0x6080604052'
+						// Detection requires the PoolManager's exact runtime size, so a fork
+						// must return code of that length and everything else must not.
+						if (forkOf !== undefined && target === forkOf.toLowerCase()) {
+							return `0x${'60'.repeat(CHAINS[1]!.poolManagerCodeSize)}`
 						}
-						return '0x6080604052'
+						return forkOf === undefined ? '0x6080604052' : '0x'
 					}
 					case 'eth_getLogs': throw Object.assign(new Error('method not supported'), { code: -32601 })
 					case 'anvil_nodeInfo':
@@ -333,24 +335,24 @@ console.log('\nScenario 6: local fork claiming to be mainnet\n')
 // usable fork reports 31337 and the app has to work out what was forked from the
 // bytecode that is actually deployed.
 
-console.log('\nScenario 7: fork reporting anvil\'s own chain id (31337)\n')
+console.log('\nScenario 7: fork on 31337 behind a wallet that blocks anvil_* methods\n')
 {
 	const h = boot()
 	await tick()
-	announce(h, mockProvider('0x7a69', true, CHAINS[1]!.contracts.poolManager))
+	// localNode = false on purpose: MetaMask filters unrecognised RPC namespaces,
+	// so anvil_nodeInfo never reaches the node. This is the common real case, and
+	// detection must not depend on it.
+	announce(h, mockProvider('0x7a69', false, CHAINS[1]!.contracts.poolManager))
 	await tick()
 	h.buttons().find(b => b.textContent?.includes('Mock Wallet'))?.click()
 	await tick(700)
 
 	const text = h.text()
-	if (text.includes('Local development node')) pass('local node detected')
-	else fail('fork on 31337 not detected as a local node')
-
-	if (text.includes('fork of')) pass('identified as a fork')
-	else fail('did not identify the endpoint as a fork')
-
-	if (/fork of\s*Ethereum/.test(text)) pass('forked chain resolved to Ethereum from bytecode')
+	if (/Fork of\s*Ethereum/.test(text)) pass('forked chain resolved to Ethereum from bytecode alone')
 	else fail(`did not resolve the forked chain; got: ${text.slice(0, 500)}`)
+
+	if (text.includes('31337')) pass('banner names the reported chain id')
+	else fail('banner does not mention the reported chain id')
 
 	// The key regression: an unrecognised chain id must NOT lock the app out when
 	// we have worked out what it is standing in for.

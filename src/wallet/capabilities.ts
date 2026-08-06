@@ -22,7 +22,12 @@ export interface Capabilities {
 	 */
 	logs: boolean
 	/**
-	 * The endpoint is a local development node (anvil/hardhat), not a real chain.
+	 * The endpoint answered an anvil/hardhat admin method.
+	 *
+	 * A positive is conclusive; a negative proves nothing. MetaMask and other
+	 * wallets filter unrecognised RPC namespaces, so a genuine local node very
+	 * often reports false here. Never gate behaviour on it -- use forkedChainId,
+	 * which relies only on eth_getCode.
 	 *
 	 * Worth detecting loudly. A forked node normally claims the chain id it forked
 	 * from, so a mainnet fork is indistinguishable from mainnet by chain id alone --
@@ -112,7 +117,13 @@ async function detectForkedChain(provider: EIP1193Provider): Promise<number | un
 				method: 'eth_getCode',
 				params: [chain.contracts.poolManager, 'latest'],
 			})
-			if (typeof code === 'string' && code.length > 4) return chain.chainId
+			if (typeof code !== 'string') continue
+			// Presence of code is not enough: an unrelated contract could occupy that
+			// address on a chain we do not support, and misidentifying the chain would
+			// point every subsequent call at the wrong addresses. Require the exact
+			// runtime size of the PoolManager we pinned and verified.
+			const size = code.length / 2 - 1
+			if (size === chain.poolManagerCodeSize) return chain.chainId
 		} catch {
 			// Try the next candidate.
 		}
@@ -128,10 +139,14 @@ export async function probeCapabilities(
 		probeMulticall(provider), probeLogs(provider), probeLocalNode(provider),
 	])
 
-	// Only bother when the chain id is one we have no addresses for -- otherwise
-	// the wallet already told us where we are.
-	const needsDetection = localNode && CHAINS[chainId] === undefined
-	const forkedChainId = needsDetection ? await detectForkedChain(provider) : undefined
+	// Detect purely on the chain id being unknown -- NOT on having proved it is a
+	// local node. Wallets restrict which RPC methods they forward, and MetaMask
+	// rejects anvil_*/hardhat_* before they ever reach the node, so `localNode` is
+	// false for most real users running a fork. Gating detection on it made the
+	// feature fail in exactly the case it exists for.
+	const forkedChainId = CHAINS[chainId] === undefined
+		? await detectForkedChain(provider)
+		: undefined
 
 	capabilities.value = {
 		multicall, logs, localNode, probed: true,

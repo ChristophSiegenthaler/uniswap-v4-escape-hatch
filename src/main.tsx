@@ -101,17 +101,20 @@ function App() {
 				</p>
 			</header>
 
-			{capabilities.value.localNode && (
+			{(capabilities.value.localNode || capabilities.value.forkedChainId !== undefined) && (
 				<div class='alert alert-warn' role='status'>
-					<strong>Local development node.</strong> You are connected to anvil or
-					hardhat, not to a real network.
-					{capabilities.value.forkedChainId !== undefined && (
-						<> Detected as a fork of <strong>{getChain(capabilities.value.forkedChainId)?.name}</strong>{' '}
-						— identified from deployed bytecode, not from the reported chain id
-						({chainId.value}).</>
+					{capabilities.value.forkedChainId !== undefined ? (
+						<>
+							<strong>Fork of {getChain(capabilities.value.forkedChainId)?.name}.</strong>{' '}
+							This endpoint reports chain id {chainId.value} but serves{' '}
+							{getChain(capabilities.value.forkedChainId)?.name}'s contracts, so it is
+							a fork — identified from deployed bytecode, not from the chain id.
+						</>
+					) : (
+						<><strong>Local development node.</strong> You are connected to anvil or
+						hardhat, not to a real network.</>
 					)}
-					{' '}Balances, ownership and prices here are a local copy. Nothing you
-					sign leaves this machine.
+					{' '}Balances, ownership and prices here are a local copy.
 				</div>
 			)}
 
