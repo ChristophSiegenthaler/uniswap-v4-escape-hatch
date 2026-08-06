@@ -14,7 +14,8 @@
     "test": "node scripts/smoke-test.ts",
     "verify:discovery": "node scripts/verify-discovery.ts",
     "verify:onchain": "npm run verify:addresses && npm run verify:discovery && npm run verify:positions",
-    "verify:positions": "node scripts/verify-positions.ts"
+    "verify:positions": "node scripts/verify-positions.ts",
+    "dev:fork": "node scripts/dev-fork.ts"
   },
   "dependencies": {
     "@preact/signals": "^2.0.1",

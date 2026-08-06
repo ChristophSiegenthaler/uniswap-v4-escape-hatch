@@ -28,6 +28,38 @@ burning real positions on a mainnet fork, including one in a hook pool** — see
 
 Swap execution (M3/M4) is not implemented yet.
 
+## Try it
+
+Two ways, depending on how far you want to go.
+
+**Just look at it** — no wallet needed:
+
+```sh
+npm install
+npm run dev     # http://127.0.0.1:8000
+```
+
+You get the disconnected state. Connect a browser wallet on any supported chain
+and you can read any position by id and search for pools, against real chain
+data. Read-only: nothing is signed.
+
+**Actually withdraw a position** — the real thing, on a local fork of mainnet:
+
+```sh
+node scripts/dev-fork.ts --to 0xYourWalletAddress   # terminal 1, keep running
+npm run dev                                         # terminal 2
+```
+
+The first command forks mainnet and **transfers a real, funded v4 position to
+your address on the fork**, so you sign with your own wallet and never import a
+test private key. It prints the position id and the network settings to add.
+Pass `--token-id 365200` to get one in a hook pool instead.
+
+Your wallet will warn that chain ID 1 already belongs to Ethereum mainnet. That
+is expected — the fork claims to be mainnet so the app finds the real v4
+contracts. Nothing you do on it touches the real chain, and it vanishes on
+Ctrl-C. Remove the network afterwards.
+
 ## Development
 
 ```sh
