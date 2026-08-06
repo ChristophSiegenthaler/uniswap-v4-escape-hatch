@@ -55,10 +55,15 @@ your address on the fork**, so you sign with your own wallet and never import a
 test private key. It prints the position id and the network settings to add.
 Pass `--token-id 365200` to get one in a hook pool instead.
 
-Your wallet will warn that chain ID 1 already belongs to Ethereum mainnet. That
-is expected — the fork claims to be mainnet so the app finds the real v4
-contracts. Nothing you do on it touches the real chain, and it vanishes on
-Ctrl-C. Remove the network afterwards.
+The fork reports **chain ID 31337**, not 1. Anvil normally adopts the forked
+chain's id, but no wallet will accept a second network claiming to be Ethereum —
+so it is overridden. The app then identifies what was forked by probing which
+PoolManager has bytecode, and shows a banner saying so.
+
+Add the network **and select it**. If your wallet stays on mainnet you will be
+reading mainnet, and the position will correctly appear to belong to someone
+else. Nothing you do on the fork touches the real chain, and it vanishes on
+Ctrl-C.
 
 ## Development
 

@@ -28,6 +28,7 @@ function ChainStatus() {
 	if (chainId.value === undefined) return null
 
 	if (!isSupportedChain.value) {
+		if (capabilities.value.localNode && !capabilities.value.probed) return null
 		const names = SUPPORTED_CHAIN_IDS.map(id => getChain(id)?.name).filter(Boolean).join(', ')
 		return (
 			<div class='alert alert-warn'>
@@ -76,7 +77,7 @@ function App() {
 			resetCapabilities()
 			return
 		}
-		void probeCapabilities(provider)
+		void probeCapabilities(provider, chainId.value)
 	}, [activeProvider.value, chainId.value])
 
 	const caps = capabilities.value
@@ -103,9 +104,14 @@ function App() {
 			{capabilities.value.localNode && (
 				<div class='alert alert-warn' role='status'>
 					<strong>Local development node.</strong> You are connected to anvil or
-					hardhat, not to {activeChainConfig.value?.name ?? 'a real network'} — even
-					though it reports the same chain id. Balances, ownership and prices here
-					are a local copy. Nothing you sign leaves this machine.
+					hardhat, not to a real network.
+					{capabilities.value.forkedChainId !== undefined && (
+						<> Detected as a fork of <strong>{getChain(capabilities.value.forkedChainId)?.name}</strong>{' '}
+						— identified from deployed bytecode, not from the reported chain id
+						({chainId.value}).</>
+					)}
+					{' '}Balances, ownership and prices here are a local copy. Nothing you
+					sign leaves this machine.
 				</div>
 			)}
 

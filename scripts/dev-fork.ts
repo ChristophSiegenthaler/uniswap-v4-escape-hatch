@@ -50,12 +50,18 @@ const recipient = getAddress(rawTo)
 
 console.log('Starting anvil fork of mainnet...\n')
 
-// --chain-id 1 matters: the app only recognises chains it has pinned v4
-// addresses for, and anvil would otherwise report 31337.
+// --chain-id 31337 is required, not optional.
+//
+// When forking, anvil ADOPTS the forked chain's id -- a mainnet fork reports 1 by
+// default. MetaMask refuses to add a second network claiming an id it already
+// knows, so such a fork cannot be added to the wallet at all. Overriding to
+// anvil's own id makes it addable; the app then works out what was forked by
+// probing which PoolManager has bytecode, so the contracts still resolve.
+const FORK_CHAIN_ID = 31337
 const anvil = spawn('anvil', [
 	'--fork-url', VERIFY_RPCS[1]!,
 	'--port', String(PORT),
-	'--chain-id', '1',
+	'--chain-id', String(FORK_CHAIN_ID),
 	'--silent',
 	'--no-rate-limit',
 ], { stdio: ['ignore', 'ignore', 'inherit'] })
@@ -82,8 +88,11 @@ for (let attempt = 0; ; attempt++) {
 	}
 }
 
-const client = createPublicClient({ chain: viemChain(1), transport: http(URL) }) as PublicClient
-console.log(`Forked mainnet at block ${await client.getBlockNumber()}\n`)
+const forkChainId = Number(await rpc('eth_chainId', []) as string)
+const client = createPublicClient({
+	chain: viemChain(forkChainId, 1), transport: http(URL),
+}) as PublicClient
+console.log(`Forked mainnet at block ${await client.getBlockNumber()} (fork reports chain id ${forkChainId})\n`)
 
 // Pick a position that still has liquidity.
 const explicit = arg('token-id')
@@ -150,15 +159,18 @@ console.log(`
   Liquidity   ${position.liquidity}
   Balance     100 ETH (for gas)
 
-  1. Add this network to your wallet:
+  1. Add this network to your wallet, then SELECT it:
        RPC URL   ${URL}
-       Chain ID  1
+       Chain ID  ${forkChainId}
        Symbol    ETH
 
-     Your wallet will warn that chain ID 1 is already Ethereum mainnet.
-     That warning is expected: the fork deliberately claims to BE mainnet so
-     the app finds the real v4 contracts. Nothing you do here touches the
-     real chain. Remove the network when you are finished.
+     The fork reports ${forkChainId} rather than 1 on purpose: a wallet will not
+     accept a second network claiming to be Ethereum. The app identifies it as
+     a fork of Ethereum from the deployed bytecode and says so in a banner.
+
+     Selecting the network matters as much as adding it -- if your wallet stays
+     on mainnet you will see mainnet's data, and this position will correctly
+     appear to belong to somebody else.
 
   2. In another terminal:  npm run dev
   3. Open http://127.0.0.1:8000 and connect with ${recipient.slice(0, 10)}…

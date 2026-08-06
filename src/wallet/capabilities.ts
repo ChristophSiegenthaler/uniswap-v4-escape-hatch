@@ -10,7 +10,7 @@
 
 import { signal } from '@preact/signals'
 import type { Address } from 'viem'
-import { MULTICALL3 } from '../chains/config.ts'
+import { CHAINS, MULTICALL3 } from '../chains/config.ts'
 import type { EIP1193Provider } from './eip6963.ts'
 
 export interface Capabilities {
@@ -31,6 +31,16 @@ export interface Capabilities {
 	 * mistaking a fork for mainnet makes correct behaviour look broken.
 	 */
 	localNode: boolean
+	/**
+	 * When on a local node whose chain id we do not recognise, the chain it appears
+	 * to have forked -- worked out by asking which PoolManager has bytecode.
+	 *
+	 * A fork keeps every contract at its original address but usually reports
+	 * anvil's own chain id (31337), because wallets refuse to add a second network
+	 * claiming an id they already know. So the chain id tells us nothing and the
+	 * deployed code tells us everything.
+	 */
+	forkedChainId?: number
 	/** Probing finished. */
 	probed: boolean
 }
@@ -88,11 +98,45 @@ async function probeLocalNode(provider: EIP1193Provider): Promise<boolean> {
 	return false
 }
 
-export async function probeCapabilities(provider: EIP1193Provider): Promise<void> {
+/**
+ * Works out which chain a local fork is standing in for.
+ *
+ * Each supported chain has a PoolManager at a distinct address, so whichever one
+ * holds bytecode identifies the forked chain. Returns undefined if none match,
+ * which means a fork of something we have no addresses for.
+ */
+async function detectForkedChain(provider: EIP1193Provider): Promise<number | undefined> {
+	for (const chain of Object.values(CHAINS)) {
+		try {
+			const code = await provider.request({
+				method: 'eth_getCode',
+				params: [chain.contracts.poolManager, 'latest'],
+			})
+			if (typeof code === 'string' && code.length > 4) return chain.chainId
+		} catch {
+			// Try the next candidate.
+		}
+	}
+	return undefined
+}
+
+export async function probeCapabilities(
+	provider: EIP1193Provider,
+	chainId: number,
+): Promise<void> {
 	const [multicall, logs, localNode] = await Promise.all([
 		probeMulticall(provider), probeLogs(provider), probeLocalNode(provider),
 	])
-	capabilities.value = { multicall, logs, localNode, probed: true }
+
+	// Only bother when the chain id is one we have no addresses for -- otherwise
+	// the wallet already told us where we are.
+	const needsDetection = localNode && CHAINS[chainId] === undefined
+	const forkedChainId = needsDetection ? await detectForkedChain(provider) : undefined
+
+	capabilities.value = {
+		multicall, logs, localNode, probed: true,
+		...(forkedChainId !== undefined && { forkedChainId }),
+	}
 }
 
 export function resetCapabilities(): void {

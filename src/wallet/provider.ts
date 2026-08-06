@@ -12,6 +12,7 @@ import { getChain } from '../chains/config.ts'
 import { viemChain } from './chains.ts'
 import type { DiscoveredProvider, EIP1193Provider } from './eip6963.ts'
 import { toFriendlyError } from './errors.ts'
+import { capabilities } from './capabilities.ts'
 
 export const activeProvider = signal<DiscoveredProvider | undefined>(undefined)
 export const account = signal<Address | undefined>(undefined)
@@ -22,12 +23,24 @@ export const blockNumber = signal<bigint | undefined>(undefined)
 
 export const isConnected = computed(() => account.value !== undefined)
 
-/** True when connected to a chain we have v4 addresses for. */
-export const isSupportedChain = computed(() =>
-	chainId.value !== undefined && getChain(chainId.value) !== undefined)
+/**
+ * The chain whose contract addresses we should use.
+ *
+ * Normally just the wallet's chain. On a local fork it is the chain that was
+ * forked, which we detect from deployed bytecode rather than trusting the
+ * reported id -- see capabilities.ts.
+ */
+export const effectiveChainId = computed(() => {
+	const reported = chainId.value
+	if (reported !== undefined && getChain(reported) !== undefined) return reported
+	return capabilities.value.forkedChainId
+})
 
 export const activeChainConfig = computed(() =>
-	chainId.value === undefined ? undefined : getChain(chainId.value))
+	effectiveChainId.value === undefined ? undefined : getChain(effectiveChainId.value))
+
+/** True when we have v4 addresses for wherever the wallet is pointed. */
+export const isSupportedChain = computed(() => activeChainConfig.value !== undefined)
 
 let publicClient: PublicClient | undefined
 let walletClient: WalletClient | undefined
@@ -43,7 +56,7 @@ function rebuildClients(): void {
 		walletClient = undefined
 		return
 	}
-	const chain = viemChain(id)
+	const chain = viemChain(id, effectiveChainId.value ?? id)
 	const transport = custom(provider.provider)
 	// A wallet RPC is a shared, rate-limited resource. frontend-ux Rule 5 asks for
 	// 2-5s responsiveness; we poll block numbers at 5s and recompute derived state

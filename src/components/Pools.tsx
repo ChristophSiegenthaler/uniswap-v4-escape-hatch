@@ -8,7 +8,7 @@ import { useState } from 'preact/hooks'
 import { formatUnits, isAddress } from 'viem'
 import type { Address } from 'viem'
 import { NATIVE_CURRENCY } from '../chains/config.ts'
-import { activeChainConfig, chainId, getPublicClient } from '../wallet/provider.ts'
+import { activeChainConfig, effectiveChainId, getPublicClient } from '../wallet/provider.ts'
 import { capabilities } from '../wallet/capabilities.ts'
 import { discoverPools } from '../v4/discover.ts'
 import type { PoolState } from '../v4/discover.ts'
@@ -35,7 +35,7 @@ export function Pools() {
 
 	const search = async () => {
 		const client = getPublicClient()
-		const id = chainId.value
+		const id = effectiveChainId.value
 		if (client === undefined || id === undefined) return
 
 		const a = tokenA === NATIVE_CURRENCY ? NATIVE_CURRENCY : parseTokenAddress(tokenA)

@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from 'preact/hooks'
 import { formatUnits } from 'viem'
 import type { Address } from 'viem'
 import { NATIVE_CURRENCY } from '../chains/config.ts'
-import { account, activeChainConfig, chainId, getPublicClient, getWalletClient } from '../wallet/provider.ts'
+import { account, activeChainConfig, chainId, effectiveChainId, getPublicClient, getWalletClient } from '../wallet/provider.ts'
 import { capabilities } from '../wallet/capabilities.ts'
 import { viemChain } from '../wallet/chains.ts'
 import { toFriendlyError } from '../wallet/errors.ts'
@@ -47,7 +47,8 @@ export function Positions() {
 	const [remembered, setRemembered] = useState<bigint[]>([])
 	const [done, setDone] = useState<string | undefined>(undefined)
 
-	const id = chainId.value
+	// Contract addresses come from the forked chain; the tx goes to the wallet's chain.
+	const id = effectiveChainId.value
 
 	useEffect(() => {
 		if (id !== undefined) setRemembered(loadRememberedTokenIds(id))
@@ -120,7 +121,7 @@ export function Positions() {
 				to: tx.to,
 				data: tx.data,
 				value: tx.value,
-				chain: viemChain(id),
+				chain: viemChain(chainId.value ?? id, id),
 			})
 			setDone(hash)
 			// Re-read so the UI reflects the closed position rather than stale state.

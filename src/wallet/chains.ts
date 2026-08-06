@@ -9,23 +9,33 @@ import { defineChain } from 'viem'
 import type { Chain } from 'viem'
 import { CHAINS } from '../chains/config.ts'
 
-const chainCache = new Map<number, Chain>()
+const chainCache = new Map<string, Chain>()
 
-export function viemChain(chainId: number): Chain | undefined {
-	const cached = chainCache.get(chainId)
+/**
+ * Builds a viem Chain.
+ *
+ * `chainId` is what the wallet reports; `configChainId` is where the contract
+ * addresses come from. They differ on a local fork, which serves mainnet's
+ * contracts while reporting anvil's own id -- we need the reported id so
+ * transactions validate, and the forked chain's Multicall3 so batching still
+ * works.
+ */
+export function viemChain(chainId: number, configChainId = chainId): Chain | undefined {
+	const key = `${chainId}:${configChainId}`
+	const cached = chainCache.get(key)
 	if (cached !== undefined) return cached
 
-	const config = CHAINS[chainId]
+	const config = CHAINS[configChainId]
 	if (config === undefined) return undefined
 
 	const chain = defineChain({
-		id: config.chainId,
-		name: config.name,
+		id: chainId,
+		name: chainId === config.chainId ? config.name : `${config.name} (fork)`,
 		nativeCurrency: { name: 'Ether', symbol: config.nativeSymbol, decimals: 18 },
 		// Empty on purpose. The wallet provides transport; we never hold an endpoint.
 		rpcUrls: { default: { http: [] } },
 		contracts: { multicall3: { address: config.contracts.multicall3 } },
 	})
-	chainCache.set(chainId, chain)
+	chainCache.set(key, chain)
 	return chain
 }
