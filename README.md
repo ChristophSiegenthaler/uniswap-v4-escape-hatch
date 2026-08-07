@@ -22,8 +22,10 @@ works on hook pools you could never enumerate.
 
 ## Status
 
-Milestones 0–2 and 5 complete. **The emergency LP exit works and is verified by
-burning real positions on a mainnet fork, including one in a hook pool** — see
+Milestones 0–2 and 5 complete. **The emergency LP exit has been executed on
+Ethereum mainnet** — [tx `0x0bd6c8b3…`](https://etherscan.io/tx/0x0bd6c8b3d2cc9f1893493aca5848d8e91da6bf2028c571a07dce4d4ff87d3ed6),
+closing a live ETH/WBTC position with both legs above the locally computed
+slippage floor. Also verified on a fork against a hook pool. See
 [`docs/emergency-exit.md`](docs/emergency-exit.md).
 
 Swap execution (M3/M4) is not implemented yet.

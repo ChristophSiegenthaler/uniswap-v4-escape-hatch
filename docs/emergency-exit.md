@@ -77,6 +77,40 @@ says so explicitly rather than pretending it protected you.
 
 ## Verification
 
+### Executed on Ethereum mainnet
+
+The exit has been run for real — not only on a fork. A live position was closed
+from this interface by a browser wallet signing an ordinary transaction:
+
+| | |
+|---|---|
+| Transaction | [`0x0bd6c8b3d2cc9f1893493aca5848d8e91da6bf2028c571a07dce4d4ff87d3ed6`](https://etherscan.io/tx/0x0bd6c8b3d2cc9f1893493aca5848d8e91da6bf2028c571a07dce4d4ff87d3ed6) |
+| Block | 25703139 |
+| Position | tokenId 365942, ETH/WBTC |
+| Actions | `0x0311` — `BURN_POSITION` + `TAKE_PAIR` |
+| Result | success, 147,057 gas |
+
+Both legs cleared the minimums the app computed locally from pool state:
+
+| | minimum encoded | received |
+|---|---|---|
+| ETH | 0.002072754131654238 | **0.002093691042074988** |
+| WBTC | 0.00006469 | **0.00006535** |
+
+`positionInfo` for 365942 now reads `0` — the position is burned.
+
+This validates more than the burn succeeding. The slippage floor was derived by
+the ported `TickMath` and `LiquidityAmounts` in this repo, encoded into the
+calldata, and enforced by the contract — and both legs landed above it, the
+excess being accrued fees. The locally-computed-minimum design is confirmed
+against mainnet, not just against a fork.
+
+The ETH leg needed an indirect check: native currency emits no `Transfer` event,
+so it was confirmed from the sender's balance delta across the block with the
+gas cost added back.
+
+### On a fork
+
 `npm run verify:positions` forks mainnet, impersonates the real owners of two real
 positions — one hookless, one in a hook pool — and burns them through the same
 encoder the app ships, asserting that the tokens actually arrive, that the payout
