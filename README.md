@@ -118,6 +118,24 @@ application talks to nothing but the user's wallet — enforced by
 - [`docs/ethskills-compliance.md`](docs/ethskills-compliance.md) — which external
   guidance was followed, deviated from, and why.
 
+## Hosting
+
+The build output is a static bundle with relative asset paths and no router, so
+it will serve from anywhere: IPFS, a plain file server, or `file://`.
+
+A GitHub Actions workflow publishes every push to `main` to GitHub Pages, gated
+on `npm run check` — so a bundle that reaches an unreviewed host, or crashes on
+first paint, never gets published.
+
+**Be clear about what that hosting is worth.** GitHub Pages is a centralised
+host that can take the page down, and a DNS name is a censorship point. It is a
+convenience mirror, not the censorship-resistant answer. The properties this
+project actually guarantees are in the bundle, not the hosting: no backend, no
+indexer, no third-party RPC. Save the page locally and it still works; that is
+the real fallback, and it is why the app runs from `file://`.
+
+IPFS deployment is the aligned option and is not wired up yet.
+
 ## Licence
 
 MIT — see [LICENSE](LICENSE). Permissive on purpose: a tool meant to be a fallback

@@ -1,0 +1,57 @@
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least privilege: read the repo, publish Pages, and mint the OIDC token the
+# deploy action needs. Nothing else.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; queue instead, and let a run in progress finish so
+# a half-published site is not left behind.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - run: npm ci
+
+      # The full offline gate: typecheck, build, the no-network audit and the
+      # jsdom smoke tests. A bundle that reaches an unreviewed host, or that
+      # crashes on first paint, must not reach the published site.
+      - name: Check
+        run: npm run check
+
+      # Pages runs Jekyll over the artifact unless told otherwise, which strips
+      # files beginning with an underscore.
+      - name: Disable Jekyll processing
+        run: touch dist/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
